@@ -19,12 +19,12 @@ void show_keyboard()
 
 void clear_text()
 {
-	tft.fillRect(0, 0, 240, 131, TFT_BLACK);
+	tft.fillRect(0, 40, 240, 91, TFT_BLACK);
 	tft.setCursor(20, 40);
 }
 
 
-String keyboard_mode()
+String keyboard_mode(const String prompt)
 {
 
 	String user_input;
@@ -35,6 +35,10 @@ String keyboard_mode()
 	show_keyboard();
 
 	tft.setTextSize(2);
+
+	tft.setCursor(20, 20);
+	tft.print(prompt);
+
 	tft.setCursor(20, 40);
 
 	while (!is_button_pressed(HOME_BUTTON, touch_x, touch_y)) {
@@ -77,3 +81,4 @@ String keyboard_mode()
 
 	return "";
 }
+
