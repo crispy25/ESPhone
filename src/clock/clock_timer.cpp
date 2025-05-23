@@ -1,85 +1,110 @@
 #include "clock_timer.h"
 
-#include <TFT_eSPI.h>
+#include <Ticker.h>
 #include <Arduino.h>
+#include <TFT_eSPI.h>
 #include <time.h>
 
-#define TICK 60
-#define MAX_STR_TIME_LEN 16
-#define COPY_TIME(T) strncpy(str_time, T, MAX_STR_TIME_LEN), str_time[MAX_STR_TIME_LEN - 1] = 0
+#define TICK 1
 
 extern TFT_eSPI tft;
 
 static Ticker timer;
-static int current_time = 0;
-static char str_time[MAX_STR_TIME_LEN] = {0};
-static uint8_t offset = 0;
-
+static const long gmtOffset_sec = 2 * 3600;
+static const int daylightOffset_sec = 3600;
 
 volatile bool update_time = false;
 
 
-void init_clock_timer()
+int monthToInt(const char *month)
 {
-	timer.attach(TICK, update_clock_time);
+	const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+							"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-	COPY_TIME(__TIME__);
-	current_time = str_to_time(str_time);
-	update_clock_time();
+	for (int i = 0; i < 12; i++) {
+		if (!strcmp(month, months[i]))
+			return i;
+	}
+
+	return 0;
 }
 
 
-void sync_clock_timer(char *time)
+void get_compile_time_info(struct tm &time_info)
 {
-	timer.attach(TICK, update_clock_time);
+	char buffer[20] = {0};
+	strcpy(buffer, __DATE__);
 
-	COPY_TIME(time);
-	current_time = str_to_time(str_time);
-	update_time = true;
+	char *p = strtok(buffer, " ");
+	int i = 0;
+
+	while (p) {
+		if (i == 0)
+			time_info.tm_mon = monthToInt(p);
+		else if (i == 1)
+			time_info.tm_mday = atoi(p);
+		else
+			time_info.tm_year = atoi(p) - 1900;		
+		
+		i++;
+		p = strtok(NULL, " ");
+	}
+
+	strcpy(buffer, __TIME__);
+
+	buffer[2] = 0;
+	buffer[5] = 0;
+
+	time_info.tm_hour = atoi(buffer);
+	time_info.tm_min = atoi(buffer + 3);
+	time_info.tm_sec = atoi(buffer + 6);
+}
+
+
+void init_clock_timer()
+{
+	struct tm time_info;
+	get_compile_time_info(time_info);
+
+	time_t total = mktime(&time_info);
+	
+	struct timeval tv = {.tv_sec = total};
+	settimeofday(&tv, NULL);
+	
+	timer.attach(TICK, update_clock_time);
+}
+
+
+void sync_clock_timer(const char *server)
+{
+	timer.detach();
+
+	configTime(gmtOffset_sec, daylightOffset_sec, server);
+
+	timer.attach(TICK, update_clock_time);
 }
 
 
 void update_clock_time()
 {
-	current_time += TICK;
 	update_time = true;
 }
 
 
 void draw_clock_time()
 {
+	tft.setTextColor(TFT_WHITE);
+	tft.setTextSize(2);
+	tft.setCursor(140, 292);
+
+	char buffer[10] = {0};
+	struct tm time_info = {0};
+
+	if(getLocalTime(&time_info))
+		strftime(buffer, sizeof(buffer), "%H:%M:%S", &time_info);
+
 	// Clear old time
 	tft.fillRect(140, 288, 98, 30, TFT_BLACK);
 
-	tft.setTextColor(TFT_WHITE);
-	tft.setTextSize(2);
-	tft.setCursor(164, 292);
-
-	time_to_str(current_time);
-
-	tft.print(str_time);
-}
-
-
-int str_to_time(char *str_time)
-{
-	int time = 0;
-
-	// Split HH:MM::SS formatted string into hours, minutes and seconds
-	str_time[2] = 0;
-	str_time[5] = 0;
-	time += atoi(str_time) * 3600 + atoi(str_time + 3) * 60 + atoi(str_time + 6);
-
-	return time;
-}
-
-
-void time_to_str(int time)
-{
-	int hours = time / 3600 % 24;
-	int minutes = (time - hours * 3600) / 60 % 60;
-	// int seconds = (time - hours * 3600 - minutes * 60) % 60;
-
-	// sprintf(str_time, "%02d:%02d:%02d", hours, minutes, seconds);
-	sprintf(str_time, "%02d:%02d", hours, minutes);
+	tft.print(buffer);
 }

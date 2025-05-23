@@ -66,7 +66,7 @@ void draw_song_info(uint8_t song_id)
 
 void init_music_app()
 {
-	pinMode(BUZZER_PIN, OUTPUT); 
+	pinMode(BUZZER_PIN, OUTPUT);
 }
 
 

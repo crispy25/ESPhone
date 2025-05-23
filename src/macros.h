@@ -40,3 +40,5 @@
 
 #define MAX_WIFIS 10
 #define MAX_WIFI_CONN_ATTEMPTS 10
+
+#define NTP_SERVER "pool.ntp.org"

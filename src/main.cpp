@@ -34,15 +34,13 @@ SparkFun_APDS9960 apds = SparkFun_APDS9960();
 static uint32_t background_color_index = 0;
 // static uint16_t cal_data[] = {354, 3684, 295, 3789, ROTATION_2_CAL_PARAMS};
 static uint16_t cal_data[] = {300, 3500, 128, 3800, ROTATION_2_CAL_PARAMS};
-static bool screen_on = true;
+static bool screen_on = true, connected_to_wifi = false;
 
 volatile bool button_pressed = false;
 
 void idle();
-void init_wifi();
 void draw_margins();
 void draw_homescreen();
-
 void info_app();
 
 void IRAM_ATTR push_button_isr();
@@ -89,11 +87,10 @@ void setup() {
 	// Configure LED
 	pinMode(LED_PIN, OUTPUT);
 
-	// init_wifi();
-
 	init_clock_timer();
+	init_music_app();
 
-	// Wait for screen initialization
+	// Wait for initializations
 	delay(500);
 	draw_homescreen();
 }
@@ -107,7 +104,7 @@ void loop() {
 	}
 
 	if (!screen_on) {
-		// idle();
+		idle();
 		#ifdef ENABLE_I2C
 		list_devices();
 		#endif
@@ -131,7 +128,7 @@ void loop() {
 	// Serial.println(touch_y);
 
 	if (is_button_pressed(WEATHER_APP_BUTTON, touch_x, touch_y)){
-		update_weather();
+		update_weather(connect_to_wifi);
 	} else if (is_button_pressed(MUSIC_APP_BUTTON, touch_x, touch_y)){
 		music_app();
 	} else if (is_button_pressed(PAINT_APP_BUTTON, touch_x, touch_y)){
@@ -207,13 +204,15 @@ void draw_homescreen()
 
 	// Draw taskbar
 	tft.fillRect(TASKBAR_RECT, TFT_BLACK);
-	draw_clock_time();
 
 	// Draw home logo
 	tft.fillRect(7, 282, HOME_SQUARE_SIZE, HOME_SQUARE_SIZE, TFT_WHITE);
 	tft.fillRect(25, 282, HOME_SQUARE_SIZE, HOME_SQUARE_SIZE, TFT_WHITE);
 	tft.fillRect(7, 300, HOME_SQUARE_SIZE, HOME_SQUARE_SIZE, TFT_WHITE);
 	tft.fillRect(25, 300, HOME_SQUARE_SIZE, HOME_SQUARE_SIZE, TFT_WHITE);
+
+	// Draw time
+	draw_clock_time();
 }
 
 void draw_margins()
@@ -238,12 +237,13 @@ void IRAM_ATTR push_button_isr()
 void info_app()
 {
 	tft.fillRect(BACKGROUND_RECT, TFT_BLACK);
+	tft.fillRect(140, 288, 98, 30, TFT_BLACK);
 	tft.setTextSize(2);
 	tft.setCursor(20, 40);
 
 	String user_input;
 	uint16_t touch_x, touch_y;
-	bool touch, connected;
+	bool touch;
 
 	String wifi_names[MAX_WIFIS];
 	uint8_t wifi_security[MAX_WIFIS], wifi_signals[MAX_WIFIS];
@@ -268,14 +268,18 @@ void info_app()
 
 				user_input = keyboard_mode();
 				
-				connected = connect_to_wifi(wifi_names[wifi_selected], user_input);
+				connected_to_wifi = connect_to_wifi(wifi_names[wifi_selected], user_input);
 				
-				show_wifi_status(wifi_names[wifi_selected], connected);
+				show_wifi_status(wifi_names[wifi_selected], connected_to_wifi);
 
 				delay(3000);
 
-				if (!connected)
+				if (!connected_to_wifi)
 					show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
+				else {
+					sync_clock_timer(NTP_SERVER);
+					break;
+				}
 			}
 
 		}
