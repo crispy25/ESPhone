@@ -10,4 +10,4 @@ struct WeatherInfo
 
 WeatherInfo parseJSON(const String &json);
 
-void update_weather();
+void update_weather(bool connected_to_wifi, bool ask_location);

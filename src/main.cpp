@@ -2,10 +2,9 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <WiFi.h>
-// #include <HTTPClient.h>
 #include <User_Setup.h>
 
-#include <SparkFun_APDS9960.h>
+// #include <SparkFun_APDS9960.h>
 #include <Wire.h>
 
 #include "img.h"
@@ -28,7 +27,7 @@ extern volatile bool update_time;
 
 TFT_eSPI tft = TFT_eSPI(); 
 
-SparkFun_APDS9960 apds = SparkFun_APDS9960();
+// SparkFun_APDS9960 apds = SparkFun_APDS9960();
 
 
 static uint32_t background_color_index = 0;
@@ -97,7 +96,6 @@ void setup() {
 
 void loop() {
 	if (button_pressed) {
-		Serial.println("Pressed");
 		button_pressed = false;
 		screen_on = !screen_on;
 		digitalWrite(TFT_BL, screen_on);
@@ -128,7 +126,8 @@ void loop() {
 	// Serial.println(touch_y);
 
 	if (is_button_pressed(WEATHER_APP_BUTTON, touch_x, touch_y)){
-		update_weather(connect_to_wifi);
+		update_weather(connected_to_wifi, true);
+		draw_homescreen();
 	} else if (is_button_pressed(MUSIC_APP_BUTTON, touch_x, touch_y)){
 		music_app();
 	} else if (is_button_pressed(PAINT_APP_BUTTON, touch_x, touch_y)){
@@ -179,9 +178,6 @@ void draw_homescreen()
 	tft.drawRect(WEATHER_APP_POSITION, WEATHER_BUTTON_SIZE, TFT_WHITE);
 	tft.drawRect(28, 28, 186, 78, TFT_WHITE);
 
-	// Update weather
-	update_weather();
-
 	// Draw apps background
 	tft.fillRect(GALLERY_APP_BUTTON, TFT_BLACK);
 	tft.fillRect(MUSIC_APP_BUTTON, TFT_BLACK);
@@ -213,6 +209,9 @@ void draw_homescreen()
 
 	// Draw time
 	draw_clock_time();
+
+	// Update weather
+	update_weather(connected_to_wifi, false);
 }
 
 void draw_margins()
@@ -258,7 +257,7 @@ void info_app()
 		if (!touch)
 			continue;
 
-		if (touch_y > TASKBAR_UPPER_LIMIT) {
+		if (touch_y > TASKBAR_UPPER_LIMIT && touch_x > 48) {
 			show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
 		} else if (touch_y > 20) {
 			uint16_t wifi_selected = (touch_y - 40) / 20;
@@ -266,13 +265,16 @@ void info_app()
 			if (wifi_selected < wifis) {
 				Serial.print(wifi_selected);
 
-				user_input = keyboard_mode();
-				
-				connected_to_wifi = connect_to_wifi(wifi_names[wifi_selected], user_input);
-				
-				show_wifi_status(wifi_names[wifi_selected], connected_to_wifi);
+				user_input = keyboard_mode("Enter password:");
 
-				delay(3000);
+				if (!user_input.isEmpty()) {
+						
+					connected_to_wifi = connect_to_wifi(wifi_names[wifi_selected], user_input);
+					
+					show_wifi_status(wifi_names[wifi_selected], connected_to_wifi);
+
+					delay(3000);
+				}
 
 				if (!connected_to_wifi)
 					show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
