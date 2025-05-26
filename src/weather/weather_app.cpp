@@ -9,10 +9,13 @@
 #include "../keyboard/keyboard.h"
 
 #define WEATHER_SERVER "http://api.weatherapi.com/v1/current.json?key=%s&q=%s"
+#define DEFAULT_LOCATION "Bucharest"
+#define WEATHER_ICON_SIZE 56, 56
 
 extern TFT_eSPI tft;
 
-static String location = "Bucharest";
+static String prev_location = DEFAULT_LOCATION;
+static String location = DEFAULT_LOCATION;
 
 
 WeatherInfo parseJSON(const String &json)
@@ -26,6 +29,10 @@ WeatherInfo parseJSON(const String &json)
 	uint16_t cloud_start_index = json.lastIndexOf("cloud") + 7;
 	weather_info.clouds = json.charAt(cloud_start_index) != '0';
 
+	uint16_t precip_start_index = json.lastIndexOf("precip_mm") + 11;
+	uint16_t precip_end_index = json.indexOf(",", precip_start_index);
+	weather_info.raining = json.substring(precip_start_index, precip_end_index).compareTo("0.0");
+
 	return weather_info;
 }
 
@@ -35,10 +42,12 @@ void draw_weather_stats(const WeatherInfo stats)
 	// Clear old weather
 	tft.fillRect(29, 29, 81, 76, TFT_BLACK);
 
-	if (stats.clouds)
-		tft.drawBitmap(94, 29, cloud_icon, 120, 76, TFT_WHITE);
+	if (stats.raining)
+		tft.drawBitmap(128, 29, raining_icon, WEATHER_ICON_SIZE, TFT_WHITE);
+	else if (stats.clouds)
+		tft.drawBitmap(128, 29, cloud_icon, WEATHER_ICON_SIZE, TFT_WHITE);
 	else
-		tft.drawBitmap(94, 29, sun_icon, 120, 76, TFT_WHITE);
+		tft.drawBitmap(128, 29, sun_icon, WEATHER_ICON_SIZE, TFT_WHITE);
 
 	// Print temperature on display
 	tft.setTextColor(TFT_WHITE);  
@@ -68,7 +77,7 @@ void draw_weather_stats(const WeatherInfo stats)
 void update_weather(bool connected_to_wifi, bool ask_location)
 {
 
-	static WeatherInfo stats = {.temperature="20.0", .clouds=true};
+	static WeatherInfo stats = {.temperature="20.0", .clouds=true, .raining=true};
 
 	if (!connected_to_wifi) {
 		draw_weather_stats(stats);
@@ -87,7 +96,7 @@ void update_weather(bool connected_to_wifi, bool ask_location)
 
 	char url[128] = {0};
 	sprintf(url, WEATHER_SERVER , WEATHER_API_KEY, location);
-
+	
 	HTTPClient http_client;
 	http_client.begin(url);
 
@@ -95,6 +104,10 @@ void update_weather(bool connected_to_wifi, bool ask_location)
 	if (response_code == HTTP_CODE_OK) {
 	  String payload = http_client.getString();
 	  stats = parseJSON(payload);
+	  prev_location = location;
+	} else {
+		location = prev_location;
+		Serial.println(response_code);
 	}
 
 	draw_weather_stats(stats);

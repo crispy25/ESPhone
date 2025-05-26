@@ -29,16 +29,40 @@
 #define BACKGROUND_RECT 0, 0, SCREEN_WIDTH, TASKBAR_UPPER_LIMIT
 #define TASKBAR_RECT 0, TASKBAR_UPPER_LIMIT, SCREEN_WIDTH, SCREEN_HEIGHT
 
-#define BUTTON_PIN 33
-#define LED_PIN 27
-
-#define SENSOR_SCL 22
-#define SENSOR_SDA 21
-#define APDS9960_INT 35
-
 #define RGB_COLOR_COUNT 16
 
 #define MAX_WIFIS 10
 #define MAX_WIFI_CONN_ATTEMPTS 10
 
 #define NTP_SERVER "pool.ntp.org"
+#define GALLERY_URL "https://cataas.com/cat?width=240&height=320"
+
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
+#define NEAR 4
+#define FAR 5
+
+/*
+    ESP32 PINOUT
+
+#define TFT_MISO 19
+#define TFT_MOSI 23
+#define TFT_SCLK 18
+#define TFT_CS   15
+#define TFT_DC    2
+#define TFT_RST  -1 // Set TFT_RST to -1 if display RESET is connected to ESP32 board RST
+
+#define TFT_BL   25 
+
+#define TOUCH_CS 4 // 5?
+*/
+
+#define BUTTON_PIN 33
+#define BUZZER_PIN 32
+#define LED_PIN 27
+
+#define SENSOR_SCL 22
+#define SENSOR_SDA 21
+#define APDS9960_INT 35

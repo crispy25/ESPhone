@@ -6,6 +6,7 @@ struct WeatherInfo
 {
     String temperature;
     bool clouds;
+    bool raining;
 };
 
 WeatherInfo parseJSON(const String &json);

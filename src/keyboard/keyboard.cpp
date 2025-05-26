@@ -2,8 +2,8 @@
 
 #include <TFT_eSPI.h>
 
-#include "../macros.h"
-#include "../utils.h"
+#include "../utils/macros.h"
+#include "../utils/utils.h"
 #include "../img.h"
 
 extern TFT_eSPI tft;

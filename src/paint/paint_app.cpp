@@ -2,14 +2,13 @@
 
 #include <TFT_eSPI.h>
 
-#include "../macros.h"
-#include "../utils.h"
+#include "../utils/macros.h"
+#include "../utils/utils.h"
 
 #define CHANGE_COLOR_BUTTON 200, 280, 40, 40
 
 extern TFT_eSPI tft;
 extern bool button_pressed;
-extern void draw_homescreen();
 
 
 void paint_app()
@@ -68,7 +67,4 @@ void paint_app()
 			delay(100);
 		}
 	}
-
-	// Return to home screen
-	draw_homescreen();
 }
