@@ -15,7 +15,7 @@ void paint_app()
 {
 	uint32_t selected_color = 0x000F;
 	uint16_t touch_x = 0, touch_y = 0;
-	uint8_t selected_color_index = 0, multi_color_index = 0, brush_size = 8;;
+	uint8_t selected_color_index = 0, multi_color_index = 0, brush_size = 8;
 	bool touch, multi_color = false;
 
 	// Draw white screen
@@ -36,7 +36,7 @@ void paint_app()
 			tft.fillRect(BACKGROUND_RECT, TFT_WHITE);
 		}
 
-		touch = tft.getTouch(&touch_x, &touch_y, 100);
+		touch = tft.getTouch(&touch_x, &touch_y, 10);
 
 		if (!touch)
 			continue;
