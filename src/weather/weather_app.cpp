@@ -11,6 +11,7 @@
 #define WEATHER_SERVER "http://api.weatherapi.com/v1/current.json?key=%s&q=%s"
 #define DEFAULT_LOCATION "Bucharest"
 #define WEATHER_ICON_SIZE 56, 56
+#define WEATHER_ICON_POSITION 144, 40
 
 extern TFT_eSPI tft;
 
@@ -43,34 +44,31 @@ void draw_weather_stats(const WeatherInfo stats)
 	tft.fillRect(29, 29, 81, 76, TFT_BLACK);
 
 	if (stats.raining)
-		tft.drawBitmap(128, 29, raining_icon, WEATHER_ICON_SIZE, TFT_WHITE);
+		tft.drawBitmap(WEATHER_ICON_POSITION, raining_icon, WEATHER_ICON_SIZE, TFT_WHITE);
 	else if (stats.clouds)
-		tft.drawBitmap(128, 29, cloud_icon, WEATHER_ICON_SIZE, TFT_WHITE);
+		tft.drawBitmap(WEATHER_ICON_POSITION, cloud_icon, WEATHER_ICON_SIZE, TFT_WHITE);
 	else
-		tft.drawBitmap(128, 29, sun_icon, WEATHER_ICON_SIZE, TFT_WHITE);
+		tft.drawBitmap(WEATHER_ICON_POSITION, sun_icon, WEATHER_ICON_SIZE, TFT_WHITE);
 
 	// Print temperature on display
 	tft.setTextColor(TFT_WHITE);  
 	tft.setTextSize(2);
-	tft.setCursor(38, 64);
-	tft.setTextFont(1);
+	tft.setCursor(38, 68);
 
 	tft.print(stats.temperature);
 
 	tft.setTextSize(1);
-	tft.setCursor(tft.getCursorX(), 58);
+	tft.setCursor(tft.getCursorX(), 62);
 	tft.print("o");
 
-	tft.setCursor(tft.getCursorX(), 64);
+	tft.setCursor(tft.getCursorX(), 68);
 	tft.setTextSize(1);
 	tft.print("C");
 
 	// Print location
-	tft.setCursor(35, 44);
-	tft.setTextSize(1);
+	tft.setCursor(35, 42);
+	tft.setTextSize(2);
 	tft.print(location);
-	tft.setTextFont(0);
-
 }
 
 
