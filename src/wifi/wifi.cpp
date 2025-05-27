@@ -9,8 +9,16 @@
 
 extern TFT_eSPI tft;
 
-int scan_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS], uint8_t wifi_security[MAX_WIFIS])
+
+void init_wifi()
 {
+	WiFi.mode(WIFI_STA);
+	WiFi.disconnect();
+}
+
+
+int scan_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS], uint8_t wifi_security[MAX_WIFIS])
+{	
 	int wifis = WiFi.scanNetworks();
 	for (uint8_t i = 0; i < min(wifis, MAX_WIFIS); i++) {
 		String wifi_name = WiFi.SSID(i).substring(0, 10);
@@ -24,15 +32,16 @@ int scan_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS],
 }
 
 
-int show_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS], uint8_t wifi_security[MAX_WIFIS], int &wifis, bool update)
+int show_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS], uint8_t wifi_security[MAX_WIFIS], int &wifis)
 {
 	tft.fillRect(BACKGROUND_RECT, TFT_BLACK);
 	tft.setTextSize(2);
 	tft.setCursor(0, 20);
 	tft.println("WIFI:");
 
-	if (update)
-		wifis = scan_networks(wifi_names, wifi_signals, wifi_security);
+	wifis = scan_networks(wifi_names, wifi_signals, wifi_security);
+
+	Serial.println(wifis);
 
 	for (uint8_t i = 0; i < min(wifis, MAX_WIFIS); i++) {
 		tft.fillRect(1, tft.getCursorY() + 5, 15, 15, TFT_WHITE);
@@ -46,7 +55,6 @@ int show_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS],
 
 bool connect_to_wifi(String wifi, String password)
 {
-	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
 	WiFi.begin(wifi, password);
 	
@@ -100,7 +108,7 @@ void info_app(bool &connected_to_wifi)
 	uint8_t wifi_security[MAX_WIFIS], wifi_signals[MAX_WIFIS];
 	int wifis = 0;
 
-	show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
+	show_networks(wifi_names, wifi_signals, wifi_security, wifis);
 
 	while (!is_button_pressed(HOME_BUTTON, touch_x, touch_y)) {
 
@@ -110,7 +118,7 @@ void info_app(bool &connected_to_wifi)
 			continue;
 
 		if (touch_y > TASKBAR_UPPER_LIMIT && touch_x > 48) {
-			show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
+			show_networks(wifi_names, wifi_signals, wifi_security, wifis);
 		} else if (touch_y > 20) {
 			uint16_t wifi_selected = (touch_y - 40) / 20;
 
@@ -120,7 +128,6 @@ void info_app(bool &connected_to_wifi)
 				user_input = keyboard_mode("Enter password:");
 
 				if (!user_input.isEmpty() || wifi_security[wifi_selected] == 0) {
-						
 					connected_to_wifi = connect_to_wifi(wifi_names[wifi_selected], user_input);
 					
 					show_wifi_status(wifi_names[wifi_selected], connected_to_wifi);
@@ -128,9 +135,10 @@ void info_app(bool &connected_to_wifi)
 					delay(3000);
 				}
 
-				if (!connected_to_wifi)
-					show_networks(wifi_names, wifi_signals, wifi_security, wifis, true);
-				else {
+				if (!connected_to_wifi) {
+					WiFi.disconnect();
+					show_networks(wifi_names, wifi_signals, wifi_security, wifis);
+				} else {
 					sync_clock_timer(NTP_SERVER);
 					break;
 				}
