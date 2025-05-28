@@ -13,6 +13,9 @@ void show_keyboard()
 {
 	tft.fillRect(BACKGROUND_RECT, TFT_BLACK);
 
+	// Clear right side of taskbar
+	tft.fillRect(RIGHT_TASKBAR_SIDE_RECT, TFT_BLACK);
+
 	tft.drawBitmap(4, 132, keyboard, 240, 141, TFT_WHITE);
 }
 
@@ -28,14 +31,13 @@ String keyboard_mode(const String prompt)
 {
 
 	String user_input;
-	uint16_t touch_x, touch_y;
+	uint16_t touch_x = 0, touch_y = 0;
+	bool touch = false, caps = false;
 	uint8_t key_x, key_y;
-	bool touch, caps = false;
 
 	show_keyboard();
 
 	tft.setTextSize(2);
-
 	tft.setCursor(20, 20);
 	tft.print(prompt);
 
@@ -51,7 +53,6 @@ String keyboard_mode(const String prompt)
 			key_x = (touch_x - 6) / 23;
 			key_y = (touch_y - 135) / 23;
 
-			// Serial.println(keys[key_y * 10 + key_x]);
 			char key = keys[key_y * 10 + key_x] - (caps * 32);
 			user_input += key;
 			tft.print(key);
@@ -73,7 +74,7 @@ String keyboard_mode(const String prompt)
 			}
 
 			delay(500);
-		} else {
+		} else if (touch_y < TASKBAR_UPPER_LIMIT) {
 			user_input.clear();
 			clear_text();
 		}
