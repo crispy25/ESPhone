@@ -1,9 +1,6 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
-#include <SPI.h>
 #include <WiFi.h>
-#include <Wire.h>
-#include <SparkFun_APDS9960.h>
 #include <User_Setup.h>
 
 #include "img.h"
@@ -16,10 +13,9 @@
 #include "gallery/galery_app.h"
 #include "weather/weather_app.h"
 #include "keyboard/keyboard.h"
+#include "chat/chat_app.h"
 #include "remote_control/remote_controller.h"
 
-#define ROTATION 2
-#define ROTATION_2_CAL_PARAMS 4
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -35,8 +31,9 @@ volatile bool button_pressed = false;
 void idle();
 void draw_homescreen();
 bool check_app_use(const uint16_t &touch_x, const uint16_t &touch_y);
-void IRAM_ATTR push_button_isr();
 void toggle_display();
+
+void IRAM_ATTR push_button_isr();
 
 void setup() {
 	Serial.begin(115200);
@@ -55,12 +52,14 @@ void setup() {
 
 	// Configure button
 	pinMode(BUTTON_PIN, INPUT_PULLUP);
-	attachInterrupt(BUTTON_PIN, push_button_isr, RISING);
+	attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), push_button_isr, RISING);
 
 	// Configure LED
 	pinMode(LED_PIN, OUTPUT);
 
 	init_gesture_sensor();
+
+	init_wifi();
 
 	// Init apps
 	init_clock_timer();
@@ -74,24 +73,21 @@ void setup() {
 
 void loop() {
 	if (button_pressed) {
-		Serial.println(esp_get_free_heap_size());
 		button_pressed = false;
 		toggle_display();
 	}
 
-	if (!screen_on && get_proximity_flag()) {
-		set_proximity_flag(false);
-		toggle_display();
-	}
+	if (get_sensor_flag()) {
+		detachInterrupt(digitalPinToInterrupt(APDS9960_INT));
+		reset_sensor_flag();
 
-	if (screen_on && get_gesture_flag()) {
 		uint8_t gesture = get_gesture();
-		set_gesture_flag(false);
 
-		if (gesture == LEFT)
+		if ((screen_on && gesture == LEFT) || (!screen_on && gesture == RIGHT))
 			toggle_display();
-	}
 
+		attachInterrupt(digitalPinToInterrupt(APDS9960_INT), gesture_sensor_isr, FALLING);
+	}
 
 	if (!screen_on) {
 		idle();
@@ -104,7 +100,7 @@ void loop() {
 		draw_clock_time();
 	}
 
-	uint16_t touch_x, touch_y;
+	uint16_t touch_x = 0, touch_y = 0;
 	bool touch = tft.getTouch(&touch_x, &touch_y);
 
 	if (!touch)
@@ -119,14 +115,14 @@ void loop() {
 void idle()
 {
 	// increase the LED brightness
-	for(int dutyCycle = 0; dutyCycle <= 128 && !button_pressed; dutyCycle++){   
+	for(int dutyCycle = 0; dutyCycle <= 128 && !button_pressed && !get_sensor_flag(); dutyCycle++){   
 		// changing the LED brightness with PWM
 		analogWrite(LED_PIN, dutyCycle);
 		delay(10);
 	}
 
 	// decrease the LED brightness
-	for(int dutyCycle = 128; dutyCycle >= 0 && !button_pressed; dutyCycle--){
+	for(int dutyCycle = 128; dutyCycle >= 0 && !button_pressed && !get_sensor_flag(); dutyCycle--){
 		// changing the LED brightness with PWM
 		analogWrite(LED_PIN, dutyCycle);
 		delay(10);
@@ -152,20 +148,18 @@ void draw_homescreen()
 	tft.fillRect(MUSIC_APP_BUTTON, TFT_BLACK);
 	tft.fillRect(PAINT_APP_BUTTON, TFT_BLACK);
 
-	tft.fillRect(ALARM_APP_BUTTON, TFT_BLACK);
+	tft.fillRect(CHAT_APP_BUTTON, TFT_BLACK);
 	tft.fillRect(RGB_APP_BUTTON, TFT_BLACK);
 	tft.fillRect(INFO_APP_BUTTON, TFT_BLACK);
 
-	#ifndef NO_IMG
 	// Draw apps
 	tft.drawBitmap(GALLERY_APP_POSITION, gallery_app_icon, BUTTON_SIZE, TFT_WHITE);
 	tft.drawBitmap(MUSIC_APP_POSITION, music_app_icon, BUTTON_SIZE, TFT_WHITE);
 	tft.drawBitmap(PAINT_APP_POSITION, paint_app_icon, BUTTON_SIZE, TFT_WHITE);
 
-	tft.drawBitmap(ALARM_APP_POSITION, alarm_app_icon, BUTTON_SIZE, TFT_WHITE);
-	tft.drawBitmap(RGB_APP_POSITION, todo_app_icon, BUTTON_SIZE, TFT_WHITE);
+	tft.drawBitmap(CHAT_APP_POSITION, chat_app_icon, BUTTON_SIZE, TFT_WHITE);
+	tft.drawBitmap(RGB_APP_POSITION, rgb_app_icon, BUTTON_SIZE, TFT_WHITE);
 	tft.drawBitmap(INFO_APP_POSITION, info_app_icon, BUTTON_SIZE, TFT_WHITE);
-	#endif
 
 	// Draw taskbar
 	tft.fillRect(TASKBAR_RECT, TFT_BLACK);
@@ -192,11 +186,14 @@ bool check_app_use(const uint16_t &touch_x, const uint16_t &touch_y)
 	} else if (is_button_pressed(GALLERY_APP_BUTTON, touch_x, touch_y)){
 		galery_app(connected_to_wifi);
 		return true;
-	} else if (is_button_pressed(MUSIC_APP_BUTTON, touch_x, touch_y)){
+	} else if (is_button_pressed(MUSIC_APP_BUTTON, touch_x, touch_y)) {
 		music_app();
 		return true;
-	} else if (is_button_pressed(PAINT_APP_BUTTON, touch_x, touch_y)){
+	} else if (is_button_pressed(PAINT_APP_BUTTON, touch_x, touch_y)) {
 		paint_app();
+		return true;
+	} else if (is_button_pressed(CHAT_APP_BUTTON, touch_x, touch_y)) {
+		chat_app(connected_to_wifi, default_4bit_palette[background_color_index]);
 		return true;
 	} else if (is_button_pressed(RGB_APP_BUTTON, touch_x, touch_y)) {
 		background_color_index++;

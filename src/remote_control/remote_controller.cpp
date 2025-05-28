@@ -8,43 +8,24 @@
 
 
 static SparkFun_APDS9960 apds = SparkFun_APDS9960();
-
-static volatile bool gesture_flag = false;
-static volatile bool proximity_flag = false;
+static volatile bool sensor_flag = false;
 
 
-void IRAM_ATTR gesture_isr()
+void IRAM_ATTR gesture_sensor_isr()
 {
-	gesture_flag = true;
+	sensor_flag = true;
 }
 
 
-void IRAM_ATTR proximity_isr()
+bool get_sensor_flag()
 {
-	proximity_flag = true;
+    return sensor_flag;
 }
 
 
-bool get_gesture_flag()
+void reset_sensor_flag()
 {
-    return gesture_flag;
-}
-
-
-bool get_proximity_flag()
-{
-    return proximity_flag;
-}
-
-bool set_gesture_flag(bool value)
-{
-    gesture_flag = value;
-}
-
-
-bool set_proximity_flag(bool value)
-{
-    proximity_flag = value;
+    sensor_flag = false;
 }
 
 
@@ -53,6 +34,8 @@ void init_gesture_sensor()
 	Wire.setPins(SDA, SCL);
 	Wire.begin();
 	
+	attachInterrupt(digitalPinToInterrupt(APDS9960_INT), gesture_sensor_isr, FALLING);
+
 	// Configure gesture sensor
 	// Set interrupt pin as input
   	pinMode(APDS9960_INT, INPUT);
@@ -70,12 +53,12 @@ void init_gesture_sensor()
 		Serial.println(F("Something went wrong during gesture sensor init!"));
 	}
 	
-	// Start running the APDS-9960 proximity sensor
-	if (apds.enableProximitySensor(true)) {
-		Serial.println(F("Proximity sensor is now running"));
-	} else {
-		Serial.println(F("Something went wrong during proximity sensor init!"));
-	}
+	// // Start running the APDS-9960 proximity sensor
+	// if (apds.enableProximitySensor(false)) {
+	// 	Serial.println(F("Proximity sensor is now running"));
+	// } else {
+	// 	Serial.println(F("Something went wrong during proximity sensor init!"));
+	// }
 }
 
 
@@ -85,25 +68,32 @@ uint8_t get_gesture()
     switch (apds.readGesture()) {
       case DIR_UP:
         Serial.println("UP");
-		return 0;
+		return UP;
       case DIR_DOWN:
         Serial.println("DOWN");
-		return 1;
+		return DOWN;
       case DIR_LEFT:
         Serial.println("LEFT");
-		return 2;
+		return LEFT;
       case DIR_RIGHT:
         Serial.println("RIGHT");
-		return 3;
+		return RIGHT;
       case DIR_NEAR:
         Serial.println("NEAR");
-		return 4;
+		return NEAR;
       case DIR_FAR:
         Serial.println("FAR");
-		return 5;
+		return FAR;
       default:
         Serial.println("NONE");
 		return -1;
     }
   }
+}
+
+uint8_t get_proximity_level()
+{	
+	uint8_t val = 0xFF;
+    apds.readProximity(val);
+	return val;
 }
