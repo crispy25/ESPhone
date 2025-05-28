@@ -137,7 +137,6 @@ void chat_app(bool connected_to_wifi, uint16_t user_color)
         user_color = TFT_GREEN;
 
     register_user(username, chat_ip);
-    Serial.println(chat_ip);
     
     String send_buffer(username + ":");
 
