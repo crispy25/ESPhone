@@ -24,6 +24,8 @@ void show_no_connection()
     tft.setTextSize(2);
 
     tft.print("No connection!");
+
+    delay(4000);
 }
 
 
@@ -73,8 +75,8 @@ void register_user(String &username, String &destination)
 
 
 String get_displayed_message(String &message) {
-    if (message.length() > MESSAGE_MIN_LEN_FOR_MULTILINE)
-        message = message.substring(0, MESSAGE_MIN_LEN_FOR_MULTILINE);
+    if (message.length() >= MESSAGE_MIN_LEN_FOR_MULTILINE)
+        message = message.substring(0, MESSAGE_MIN_LEN_FOR_MULTILINE - 1);
     
     return message;
 }
@@ -137,7 +139,7 @@ void chat_app(bool connected_to_wifi, uint16_t user_color)
     register_user(username, chat_ip);
     Serial.println(chat_ip);
     
-    String send_buffer(username + ": ");
+    String send_buffer(username + ":");
 
     draw_ui();
 
