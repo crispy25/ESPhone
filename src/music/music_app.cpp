@@ -58,7 +58,7 @@ void piano()
 
 
 	uint16_t touch_x = 0, touch_y = 0;
-	bool touch;
+	bool touch = false;
 
 	while (!is_button_pressed(HOME_BUTTON, touch_x, touch_y)) {
 		touch = tft.getTouch(&touch_x, &touch_y, 100);
@@ -98,7 +98,7 @@ void init_music_app()
 {
 	pinMode(BUZZER_PIN, OUTPUT);
 
-	// ledcSetup(0, 2000, 8);       // channel 0, 2 KHz, 8-bit resolution
+	ledcSetup(0, 2000, 8);       // channel 0, 2 KHz, 8-bit resolution
   	ledcAttachPin(BUZZER_PIN, 0);
 }
 

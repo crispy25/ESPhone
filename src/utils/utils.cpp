@@ -14,7 +14,7 @@ bool is_button_pressed(int bx, int by, int bw, int bh, int px, int py)
 void test_touch()
 {
     static uint16_t min_x = -1, min_y = -1, max_x = 0, max_y = 0;
-	uint16_t touch_x, touch_y;
+	uint16_t touch_x = 0, touch_y = 0;
 	// bool touch = tft.getTouch(&touch_x, &touch_y);
 
 	// if (!touch)
