@@ -5,4 +5,6 @@
 
 void init_wifi();
 
+bool connect_to_wifi(String wifi, String password);
+
 void info_app(bool &connected_to_wifi);

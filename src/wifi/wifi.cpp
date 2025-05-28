@@ -13,7 +13,6 @@ extern TFT_eSPI tft;
 void init_wifi()
 {
 	WiFi.mode(WIFI_STA);
-	WiFi.disconnect();
 }
 
 
@@ -40,8 +39,6 @@ int show_networks(String wifi_names[MAX_WIFIS], uint8_t wifi_signals[MAX_WIFIS],
 	tft.println("WIFI:");
 
 	wifis = scan_networks(wifi_names, wifi_signals, wifi_security);
-
-	Serial.println(wifis);
 
 	for (uint8_t i = 0; i < min(wifis, MAX_WIFIS); i++) {
 		tft.fillRect(1, tft.getCursorY() + 5, 15, 15, TFT_WHITE);
@@ -101,8 +98,8 @@ void info_app(bool &connected_to_wifi)
 	tft.setCursor(20, 40);
 
 	String user_input;
-	uint16_t touch_x, touch_y;
-	bool touch;
+	uint16_t touch_x = 0, touch_y = 0;
+	bool touch = false;
 
 	String wifi_names[MAX_WIFIS];
 	uint8_t wifi_security[MAX_WIFIS], wifi_signals[MAX_WIFIS];
@@ -123,8 +120,6 @@ void info_app(bool &connected_to_wifi)
 			uint16_t wifi_selected = (touch_y - 40) / 20;
 
 			if (wifi_selected < wifis) {
-				Serial.print(wifi_selected);
-
 				user_input = keyboard_mode("Enter password:");
 
 				if (!user_input.isEmpty() || wifi_security[wifi_selected] == 0) {
