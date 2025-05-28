@@ -12,6 +12,7 @@
 #define DEFAULT_LOCATION "Bucharest"
 #define WEATHER_ICON_SIZE 56, 56
 #define WEATHER_ICON_POSITION 144, 40
+#define UPDATE_INTERVAL 60 * 1000
 
 extern TFT_eSPI tft;
 
@@ -74,13 +75,15 @@ void draw_weather_stats(const WeatherInfo stats)
 
 void update_weather(bool connected_to_wifi, bool ask_location)
 {
-
 	static WeatherInfo stats = {.temperature="20.0", .clouds=true, .raining=true};
+	static unsigned long last_update = 0;
+	static bool offline = true;
 
 	if (!connected_to_wifi) {
 		draw_weather_stats(stats);
 		return;
 	}
+
 
 	if (ask_location){
 		String user_input = keyboard_mode("Enter city:");
@@ -92,9 +95,16 @@ void update_weather(bool connected_to_wifi, bool ask_location)
 		}
 	}
 
+	if (!ask_location && millis() - last_update < UPDATE_INTERVAL && connected_to_wifi == !offline) {
+		draw_weather_stats(stats);
+		return;
+	}
+
+	offline = false;
+
 	char url[128] = {0};
 	sprintf(url, WEATHER_SERVER , WEATHER_API_KEY, location);
-	
+
 	HTTPClient http_client;
 	http_client.begin(url);
 
@@ -105,8 +115,9 @@ void update_weather(bool connected_to_wifi, bool ask_location)
 	  prev_location = location;
 	} else {
 		location = prev_location;
-		Serial.println(response_code);
 	}
+
+	last_update = millis();
 
 	draw_weather_stats(stats);
 
