@@ -20,6 +20,8 @@ extern TFT_eSPI tft;
 
 void show_no_connection()
 {
+    tft.fillRect(BACKGROUND_RECT, TFT_BLACK);
+
     tft.setCursor(20, 140);
     tft.setTextSize(2);
 
