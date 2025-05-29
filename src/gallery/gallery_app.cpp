@@ -11,7 +11,7 @@
 #include "../utils/utils.h"
 
 extern TFT_eSPI tft;
-extern bool button_pressed;
+extern volatile bool button_pressed;
 
 // Fetch a file from the URL given and save it in LittleFS
 // Return 1 if a web fetch was needed or 0 if file already exists
@@ -136,7 +136,7 @@ bool download_image()
 
 void show_online_images()
 {
-    uint16_t touch_x, touch_y;
+	  uint16_t touch_x = 0, touch_y = 0;
     while (!button_pressed) {
 
         bool touch = tft.getTouch(&touch_x, &touch_y);

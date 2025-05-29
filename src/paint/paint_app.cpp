@@ -8,7 +8,7 @@
 #define CHANGE_COLOR_BUTTON 200, 280, 40, 40
 
 extern TFT_eSPI tft;
-extern bool button_pressed;
+extern volatile bool button_pressed;
 
 
 void paint_app()

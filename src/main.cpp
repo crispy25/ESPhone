@@ -94,7 +94,6 @@ void loop() {
 		return;
 	}
 
-
 	if (update_time) {
 		update_time = false;
 		draw_clock_time();
