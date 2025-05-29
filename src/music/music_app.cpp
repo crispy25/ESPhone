@@ -3,9 +3,12 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 
+#include "../remote_control/remote_controller.h"
 #include "../utils/macros.h"
 #include "../utils/utils.h"
 #include "songs.h"
+
+#define END 0xFF
 
 
 extern TFT_eSPI tft;
@@ -16,10 +19,10 @@ static int* songs_durations[] = {pink_panther_durations, star_wars_durations, ch
 static uint8_t notes_count[] = {88, 88, 26, 31};
 static uint8_t songs_count = 4;
 
-extern bool button_pressed;
+extern volatile bool button_pressed;
 
 
-void play_song(uint8_t song_id)
+void play_song(uint8_t &song_id)
 {
 	uint8_t notes = notes_count[song_id];
 	int* melody = songs_notes[song_id];
@@ -40,43 +43,34 @@ void play_song(uint8_t song_id)
 		// Check if user wants to play next song
 		if (button_pressed) {
 			button_pressed = false;
+			song_id = END;
 			break;
+		}
+
+		if (get_sensor_flag()) {
+			detachInterrupt(digitalPinToInterrupt(APDS9960_INT));
+			reset_sensor_flag();
+
+			uint8_t gesture = get_gesture();
+			bool change_song = false;
+
+			if (gesture == LEFT) {
+				song_id--;
+				change_song = true;
+			} else if (gesture == RIGHT) {
+				song_id++;
+				change_song = true;
+			}
+
+			attachInterrupt(digitalPinToInterrupt(APDS9960_INT), gesture_sensor_isr, FALLING);
+			
+			if (change_song)
+				break;
 		}
 
 		// Draw notes progress
 		tft.fillRect(0, 300, (1.0 * note / notes) * 240, 40, TFT_WHITE);
 	} 
-}
-
-
-void piano()
-{	
-	tft.fillRect(BACKGROUND_RECT, TFT_BLACK);
-
-	tft.fillCircle(120, 160, 40, TFT_WHITE);
-	tft.fillCircle(120, 160, 8, TFT_BLACK);
-
-
-	uint16_t touch_x = 0, touch_y = 0;
-	bool touch = false;
-
-	while (!is_button_pressed(HOME_BUTTON, touch_x, touch_y)) {
-		touch = tft.getTouch(&touch_x, &touch_y, 100);
-
-		if (!touch) {
-			// noTone(BUZZER_PIN);
-			delay(100);
-			ledcWriteTone(0, 0); 
-			continue;
-		}
-
-		uint8_t f = map(touch_x + touch_y * 320, 0, 800, 30, 4000);
-
-		ledcWriteTone(0, f);  // Play tone on channel 0
-		delay(100);
-
-		// ledcWriteTone(0, 0); 
-	}
 }
 
 
@@ -98,7 +92,7 @@ void init_music_app()
 {
 	pinMode(BUZZER_PIN, OUTPUT);
 
-	ledcSetup(0, 2000, 8);       // channel 0, 2 KHz, 8-bit resolution
+	ledcSetup(0, 1000, 8);
   	ledcAttachPin(BUZZER_PIN, 0);
 }
 
@@ -111,7 +105,5 @@ void music_app()
 
 		draw_song_info(selected_song);
 		play_song(selected_song);
-
-		selected_song++;
 	}
 }
