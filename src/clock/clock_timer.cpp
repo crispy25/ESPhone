@@ -6,17 +6,17 @@
 #include <time.h>
 
 #define TICK 1
+#define GMT_OFFSET 2 * 3600
+#define DST_OFFSET 3600
+
 
 extern TFT_eSPI tft;
 
 static Ticker timer;
-static const long gmtOffset_sec = 2 * 3600;
-static const int daylightOffset_sec = 3600;
-
 volatile bool update_time = false;
 
 
-int monthToInt(const char *month)
+int month_to_int(const char *month)
 {
 	const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 							"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -40,7 +40,7 @@ void get_compile_time_info(struct tm &time_info)
 
 	while (p) {
 		if (i == 0)
-			time_info.tm_mon = monthToInt(p);
+			time_info.tm_mon = month_to_int(p);
 		else if (i == 1)
 			time_info.tm_mday = atoi(p);
 		else
@@ -67,10 +67,10 @@ void init_clock_timer()
 	get_compile_time_info(time_info);
 
 	time_t total = mktime(&time_info);
-	
-	struct timeval tv = {.tv_sec = total};
+
+	struct timeval tv = {.tv_sec = total, .tv_usec = 0};
 	settimeofday(&tv, NULL);
-	
+
 	timer.attach(TICK, update_clock_time);
 }
 
@@ -79,7 +79,9 @@ void sync_clock_timer(const char *server)
 {
 	timer.detach();
 
-	configTime(gmtOffset_sec, daylightOffset_sec, server);
+	configTime(GMT_OFFSET, DST_OFFSET, server);
+
+	update_time = true;
 
 	timer.attach(TICK, update_clock_time);
 }
