@@ -48,25 +48,30 @@
 #define NEAR 4
 #define FAR 5
 
-/*
-    ESP32 PINOUT
-
-#define TFT_MISO 19
-#define TFT_MOSI 23
-#define TFT_SCLK 18
-#define TFT_CS   15
-#define TFT_DC    2
-#define TFT_RST  -1 // Set TFT_RST to -1 if display RESET is connected to ESP32 board RST
-
-#define TFT_BL   25 
-
-#define TOUCH_CS 4 // 5?
-*/
-
-#define BUTTON_PIN 33
+#define BUTTON_PIN 26
 #define BUZZER_PIN 32
-#define LED_PIN 27
+#define LED_PIN 14
 
 #define SENSOR_SCL 22
 #define SENSOR_SDA 21
 #define APDS9960_INT 35
+
+/*
+ESP32 PINOUT
+
+#define TFT_MISO        19
+#define TFT_MOSI        23
+#define TFT_SCLK        18
+#define TFT_CS          15
+#define TFT_DC          2
+#define TFT_RST         -1
+#define TFT_BL          25 
+#define TOUCH_CS        4
+#define BUTTON_PIN      26
+#define BUZZER_PIN      32
+#define LED_PIN         14
+#define SENSOR_SCL      22
+#define SENSOR_SDA      21
+#define APDS9960_INT    35
+
+*/
