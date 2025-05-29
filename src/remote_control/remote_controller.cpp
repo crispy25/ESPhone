@@ -52,13 +52,7 @@ void init_gesture_sensor()
 	} else {
 		Serial.println(F("Something went wrong during gesture sensor init!"));
 	}
-	
-	// // Start running the APDS-9960 proximity sensor
-	// if (apds.enableProximitySensor(false)) {
-	// 	Serial.println(F("Proximity sensor is now running"));
-	// } else {
-	// 	Serial.println(F("Something went wrong during proximity sensor init!"));
-	// }
+
 }
 
 
@@ -89,11 +83,4 @@ uint8_t get_gesture()
 		return -1;
     }
   }
-}
-
-uint8_t get_proximity_level()
-{	
-	uint8_t val = 0xFF;
-    apds.readProximity(val);
-	return val;
 }

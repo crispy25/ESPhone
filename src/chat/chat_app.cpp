@@ -72,6 +72,8 @@ void register_user(String &username, String &destination)
         
         int last_dot = destination.lastIndexOf(".");
         destination = destination.substring(0, last_dot + 1) + "255";
+    } else {
+        destination = user_input;
     }
 }
 

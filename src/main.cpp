@@ -19,10 +19,9 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
-static uint32_t background_color_index = 0;
-// static uint16_t cal_data[] = {354, 3684, 295, 3789, ROTATION_2_CAL_PARAMS};
-static uint16_t cal_data[] = {300, 3500, 128, 3800, ROTATION_2_CAL_PARAMS};
 
+static uint16_t cal_data[] = {300, 3500, 128, 3800, ROTATION_2_CAL_PARAMS};
+static uint32_t background_color_index = 0;
 static bool screen_on = true, connected_to_wifi = false;
 extern volatile bool update_time;
 volatile bool button_pressed = false;
@@ -31,16 +30,17 @@ volatile bool button_pressed = false;
 void idle();
 void draw_homescreen();
 bool check_app_use(const uint16_t &touch_x, const uint16_t &touch_y);
+void handle_gesture();
 void toggle_display();
 
 void IRAM_ATTR push_button_isr();
 
+
 void setup() {
 	Serial.begin(115200);
 
-	// Set all chip selects high to avoid bus contention during initialisation of each peripheral
-	digitalWrite(TOUCH_CS, HIGH); // Touch controller chip select (if used)
-	digitalWrite(TFT_CS, HIGH); // TFT screen chip select
+	digitalWrite(TOUCH_CS, HIGH);
+	digitalWrite(TFT_CS, HIGH);
 
 	// Configure TFT
 	pinMode(TFT_BL, OUTPUT);
@@ -73,33 +73,29 @@ void setup() {
 
 
 void loop() {
+	// If button is pressed, toggle the display
 	if (button_pressed) {
 		button_pressed = false;
 		toggle_display();
 	}
 
-	if (get_sensor_flag()) {
-		detachInterrupt(digitalPinToInterrupt(APDS9960_INT));
-		reset_sensor_flag();
+	// Check and handle any gesture
+	if (get_sensor_flag())
+		handle_gesture();
 
-		uint8_t gesture = get_gesture();
-
-		if ((screen_on && gesture == LEFT) || (!screen_on && gesture == RIGHT))
-			toggle_display();
-
-		attachInterrupt(digitalPinToInterrupt(APDS9960_INT), gesture_sensor_isr, FALLING);
-	}
-
+	// If the screen is off, return
 	if (!screen_on) {
 		idle();
 		return;
 	}
 
+	// If the clock timer updated the time, draw the new time
 	if (update_time) {
 		update_time = false;
 		draw_clock_time();
 	}
 
+	// Check for any touch
 	uint16_t touch_x = 0, touch_y = 0;
 	bool touch = tft.getTouch(&touch_x, &touch_y);
 
@@ -114,16 +110,12 @@ void loop() {
 
 void idle()
 {
-	// increase the LED brightness
-	for(int dutyCycle = 0; dutyCycle <= 128 && !button_pressed && !get_sensor_flag(); dutyCycle++){   
-		// changing the LED brightness with PWM
+	for(uint8_t dutyCycle = 0; dutyCycle <= 128 && !button_pressed && !get_sensor_flag(); dutyCycle++){   
 		analogWrite(LED_PIN, dutyCycle);
 		delay(10);
 	}
 
-	// decrease the LED brightness
-	for(int dutyCycle = 128; dutyCycle >= 0 && !button_pressed && !get_sensor_flag(); dutyCycle--){
-		// changing the LED brightness with PWM
+	for(uint8_t dutyCycle = 128; dutyCycle >= 0 && !button_pressed && !get_sensor_flag(); dutyCycle--){
 		analogWrite(LED_PIN, dutyCycle);
 		delay(10);
 	}
@@ -212,11 +204,26 @@ bool check_app_use(const uint16_t &touch_x, const uint16_t &touch_y)
 }
 
 
+void handle_gesture()
+{
+	detachInterrupt(digitalPinToInterrupt(APDS9960_INT));
+	reset_sensor_flag();
+
+	uint8_t gesture = get_gesture();
+
+	if ((screen_on && gesture == LEFT) || (!screen_on && gesture == RIGHT))
+		toggle_display();
+
+	attachInterrupt(digitalPinToInterrupt(APDS9960_INT), gesture_sensor_isr, FALLING);
+}
+
+
 void toggle_display()
 {
 	screen_on = !screen_on;
 	digitalWrite(TFT_BL, screen_on);
 }
+
 
 void IRAM_ATTR push_button_isr()
 {

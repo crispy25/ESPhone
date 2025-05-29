@@ -12,5 +12,3 @@ void reset_sensor_flag();
 void init_gesture_sensor();
 
 uint8_t get_gesture();
-
-uint8_t get_proximity_level();
