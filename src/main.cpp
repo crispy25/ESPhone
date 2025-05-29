@@ -54,8 +54,9 @@ void setup() {
 	pinMode(BUTTON_PIN, INPUT_PULLUP);
 	attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), push_button_isr, RISING);
 
-	// Configure LED
+	// Configure LED for PWM
 	pinMode(LED_PIN, OUTPUT);
+	ledcSetup(0, 1000, 8);
 
 	init_gesture_sensor();
 
