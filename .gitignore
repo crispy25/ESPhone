@@ -8,4 +8,5 @@ include/
 lib/
 test/
 platformio.ini
+desktop.ini
 api_keys.h

@@ -56,7 +56,7 @@ void setup() {
 
 	// Configure LED for PWM
 	pinMode(LED_PIN, OUTPUT);
-	ledcSetup(0, 1000, 8);
+	ledcSetup(0, 8000, 8);
 
 	init_gesture_sensor();
 
@@ -110,14 +110,14 @@ void loop() {
 
 void idle()
 {
-	for(uint8_t dutyCycle = 0; dutyCycle <= 128 && !button_pressed && !get_sensor_flag(); dutyCycle++){   
+	for(int dutyCycle = 0; dutyCycle <= 32 && !button_pressed && !get_sensor_flag(); dutyCycle++){   
 		analogWrite(LED_PIN, dutyCycle);
-		delay(10);
+		delay(40);
 	}
 
-	for(uint8_t dutyCycle = 128; dutyCycle >= 0 && !button_pressed && !get_sensor_flag(); dutyCycle--){
+	for(int dutyCycle = 32; dutyCycle >= 0 && !button_pressed && !get_sensor_flag(); dutyCycle--){
 		analogWrite(LED_PIN, dutyCycle);
-		delay(10);
+		delay(40);
 	}
 
 	// Turn off the LED
